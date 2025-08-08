@@ -4,14 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google Form to HTML</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .form-container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 20px auto;
             padding: 20px;
         }
         .error {
-            color: red;
+            color: #dc2626;
             display: none;
         }
         .converted-form {
@@ -19,52 +20,126 @@
         }
         #htmlCode {
             width: 100%;
-            height: 200px;
+            height: 300px;
             margin-top: 20px;
             padding: 10px;
-            font-family: monospace;
+            font-family: 'Courier New', monospace;
             white-space: pre-wrap;
             tab-size: 2;
             -moz-tab-size: 2;
             resize: vertical;
-            background-color: #f5f5f5;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
             line-height: 1.5;
             overflow-x: auto;
+            font-size: 14px;
         }
         .copy-button {
             margin-top: 10px;
-            padding: 5px 10px;
+            padding: 8px 16px;
             cursor: pointer;
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .copy-button:hover {
+            background-color: #2563eb;
         }
         .preview-section {
             margin-top: 20px;
-            border-top: 1px solid #ccc;
+            border-top: 1px solid #e5e7eb;
             padding-top: 20px;
         }
         /* Style for code indentation */
         .code-indent {
             padding-left: 20px;
         }
+        /* Form field styling */
+        .form-field {
+            margin-bottom: 1rem;
+        }
+        .form-field label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+        }
+        .form-field input[type="text"],
+        .form-field textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        .form-field input[type="text"]:focus,
+        .form-field textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .form-field button[type="submit"] {
+            background-color: #10b981;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .form-field button[type="submit"]:hover {
+            background-color: #059669;
+        }
+        .form-field button[type="submit"]:disabled {
+            background-color: #9ca3af;
+            cursor: not-allowed;
+        }
+        /* Radio and checkbox styling */
+        .radio, .checkbox {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 1rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+        }
+        .radio input, .checkbox input {
+            margin-right: 0.5rem;
+        }
+        .label {
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
     </style>
 </head>
-<body>
-    <div class="form-container">
-        <h2>Google Form to HTML Converter</h2>
-        <input type="text" id="input" placeholder="Enter Google Form URL" style="width: 100%; padding: 8px;">
-        <button onclick="convertForm()" style="margin-top: 10px;">Convert</button>
-        <p id="error" class="error">Please enter a valid Google Form URL</p>
+<body class="bg-gray-50">
+    <div class="form-container bg-white rounded-lg shadow-lg p-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-6">Google Form to HTML Converter</h2>
+        <div class="mb-6">
+            <input type="text" id="input" placeholder="Enter Google Form URL" 
+                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+            <button onclick="convertForm()" 
+                    class="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                Convert Form
+            </button>
+        </div>
+        <p id="error" class="error bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">Please enter a valid Google Form URL</p>
         
-        <div id="codeSection" style="display: none;">
-            <h3>Generated HTML Code:</h3>
+        <div id="codeSection" style="display: none;" class="mt-8">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">Generated HTML Code:</h3>
             <textarea id="htmlCode" readonly spellcheck="false"></textarea>
             <button onclick="copyToClipboard()" class="copy-button">Copy HTML</button>
         </div>
 
         <div class="preview-section">
-            <h3>Preview:</h3>
-            <div id="result"></div>
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">Preview:</h3>
+            <div id="result" class="bg-gray-50 p-6 rounded-lg"></div>
         </div>
     </div>
 

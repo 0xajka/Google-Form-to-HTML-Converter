@@ -41,7 +41,7 @@ async function convertForm() {
         form.className = 'converted-form';
         form.action = submissionUrl;
         form.method = 'POST';
-        form.target = '_blank';
+        form.id = 'google-form-generated';
 
         // Process each question
         questions.forEach(question => {
@@ -75,8 +75,63 @@ async function convertForm() {
         const submitBtn = document.createElement('button');
         submitBtn.type = 'submit';
         submitBtn.textContent = 'Submit';
-        submitBtn.style.marginTop = '15px';
+        submitBtn.className = 'mt-4 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium';
         form.appendChild(submitBtn);
+
+        // Add status div for form submission feedback
+        const statusDiv = document.createElement('div');
+        statusDiv.id = 'form-submission-status';
+        statusDiv.className = 'mt-4 p-3 rounded-lg hidden';
+        form.appendChild(statusDiv);
+
+        // Add JavaScript for asynchronous submission
+        const script = document.createElement('script');
+        script.textContent = `
+            document.getElementById('google-form-generated').addEventListener('submit', function(e) {
+                e.preventDefault(); // Stop default redirect
+                
+                const form = e.target;
+                const statusDiv = document.getElementById('form-submission-status');
+                const submitBtn = form.querySelector('button[type="submit"]');
+                
+                // Update UI to show submitting state
+                statusDiv.className = 'mt-4 p-3 rounded-lg block bg-yellow-50 border border-yellow-200 text-yellow-800';
+                statusDiv.textContent = 'Submitting...';
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Submitting...';
+                submitBtn.className = 'mt-4 px-6 py-3 bg-gray-400 text-white rounded-lg cursor-not-allowed font-medium';
+                
+                const formData = new FormData(form);
+                const params = new URLSearchParams(formData).toString();
+                
+                fetch(form.action, {
+                    method: 'POST',
+                    mode: 'no-cors', // Crucial for cross-origin submission to Google Forms
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: params
+                })
+                .then(() => {
+                    // In no-cors mode, we can't get actual response status,
+                    // but if fetch completes, assume successful data dispatch.
+                    statusDiv.className = 'mt-4 p-3 rounded-lg block bg-green-50 border border-green-200 text-green-800';
+                    statusDiv.textContent = 'Form submitted successfully!';
+                    form.reset(); // Clear fields
+                })
+                .catch(error => {
+                    console.error('Error submitting form:', error);
+                    statusDiv.className = 'mt-4 p-3 rounded-lg block bg-red-50 border border-red-200 text-red-800';
+                    statusDiv.textContent = 'Submission failed. Please try again.';
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit';
+                    submitBtn.className = 'mt-4 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium';
+                });
+            });
+        `;
+        form.appendChild(script);
 
         // Show the preview
         result.appendChild(form.cloneNode(true));
@@ -95,7 +150,6 @@ async function convertForm() {
 function createTextField(label, entryId) {
     const container = document.createElement('div');
     container.className = 'form-field';
-    container.style.marginBottom = '15px';
 
     const labelElement = document.createElement('label');
     labelElement.textContent = label;
@@ -104,9 +158,7 @@ function createTextField(label, entryId) {
     const input = document.createElement('input');
     input.type = 'text';
     input.name = `entry.${entryId}`;
-    input.style.display = 'block';
-    input.style.width = '100%';
-    input.style.marginTop = '5px';
+    input.className = 'w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent';
     container.appendChild(input);
 
     return container;
@@ -115,7 +167,6 @@ function createTextField(label, entryId) {
 function createTextArea(label, entryId) {
     const container = document.createElement('div');
     container.className = 'form-field';
-    container.style.marginBottom = '15px';
 
     const labelElement = document.createElement('label');
     labelElement.textContent = label;
@@ -123,9 +174,8 @@ function createTextArea(label, entryId) {
 
     const textarea = document.createElement('textarea');
     textarea.name = `entry.${entryId}`;
-    textarea.style.display = 'block';
-    textarea.style.width = '100%';
-    textarea.style.marginTop = '5px';
+    textarea.className = 'w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent';
+    textarea.rows = 4;
     container.appendChild(textarea);
 
     return container;
@@ -134,64 +184,74 @@ function createTextArea(label, entryId) {
 function createRadioGroup(label, entryId, options) {
     const container = document.createElement('div');
     container.className = 'form-field';
-    container.style.marginBottom = '15px';
 
     const labelElement = document.createElement('p');
     labelElement.textContent = label;
     labelElement.className = 'label';
     container.appendChild(labelElement);
 
+    const optionsContainer = document.createElement('div');
+    optionsContainer.className = 'space-y-2';
+
     options.forEach((option, index) => {
         const div = document.createElement('div');
+        div.className = 'flex items-center';
         
         const input = document.createElement('input');
         input.type = 'radio';
         input.name = `entry.${entryId}`;
         input.value = option[0];
         input.id = `${entryId}_${index}`;
+        input.className = 'mr-2';
 
         const optionLabel = document.createElement('label');
         optionLabel.htmlFor = `${entryId}_${index}`;
         optionLabel.textContent = option[0];
-        optionLabel.className = 'radio';
+        optionLabel.className = 'cursor-pointer';
 
         div.appendChild(input);
         div.appendChild(optionLabel);
-        container.appendChild(div);
+        optionsContainer.appendChild(div);
     });
 
+    container.appendChild(optionsContainer);
     return container;
 }
 
 function createCheckboxGroup(label, entryId, options) {
     const container = document.createElement('div');
     container.className = 'form-field';
-    container.style.marginBottom = '15px';
 
     const labelElement = document.createElement('p');
     labelElement.textContent = label;
     labelElement.className = 'label';
     container.appendChild(labelElement);
 
+    const optionsContainer = document.createElement('div');
+    optionsContainer.className = 'space-y-2';
+
     options.forEach((option, index) => {
         const div = document.createElement('div');
+        div.className = 'flex items-center';
         
         const input = document.createElement('input');
         input.type = 'checkbox';
         input.name = `entry.${entryId}`;
         input.value = option[0];
         input.id = `${entryId}_${index}`;
+        input.className = 'mr-2';
 
         const optionLabel = document.createElement('label');
         optionLabel.htmlFor = `${entryId}_${index}`;
         optionLabel.textContent = option[0];
-        optionLabel.className = 'checkbox';
+        optionLabel.className = 'cursor-pointer';
 
         div.appendChild(input);
         div.appendChild(optionLabel);
-        container.appendChild(div);
+        optionsContainer.appendChild(div);
     });
 
+    container.appendChild(optionsContainer);
     return container;
 }
 
