@@ -22,7 +22,7 @@ async function convertForm() {
 
     try {
         // Use our proxy server to fetch the form
-        const response = await fetch(`http://localhost:3000/fetch-form?url=${encodeURIComponent(url)}`);
+        const response = await fetch(`/fetch-form?url=${encodeURIComponent(url)}`);
         const html = await response.text();
         
         // Extract FB_PUBLIC_LOAD_DATA_
