@@ -3,14 +3,16 @@ async function convertForm() {
     const error = document.getElementById('error');
     const result = document.getElementById('result');
     const codeSection = document.getElementById('codeSection');
-    const htmlCode = document.getElementById('htmlCode');
+    const htmlCodeTailwind = document.getElementById('htmlCodeTailwind');
+    const htmlCodeCSS = document.getElementById('htmlCodeCSS');
     const url = input.value.trim();
 
     // Reset displays
     error.style.display = 'none';
     result.innerHTML = '';
     codeSection.style.display = 'none';
-    htmlCode.value = '';
+    htmlCodeTailwind.value = '';
+    htmlCodeCSS.value = '';
 
     // Validate URL
     if (!url || !url.includes('docs.google.com/forms')) {
@@ -136,9 +138,14 @@ async function convertForm() {
         // Show the preview
         result.appendChild(form.cloneNode(true));
 
+        // Generate both versions
+        const tailwindForm = form.cloneNode(true);
+        const cssForm = createCSSVersion(form.cloneNode(true));
+        
         // Show the HTML code
         codeSection.style.display = 'block';
-        htmlCode.value = formatHTML(form.outerHTML);
+        document.getElementById('htmlCodeTailwind').value = formatHTML(tailwindForm.outerHTML);
+        document.getElementById('htmlCodeCSS').value = formatHTML(cssForm.outerHTML);
 
     } catch (err) {
         console.error(err);
@@ -255,12 +262,12 @@ function createCheckboxGroup(label, entryId, options) {
     return container;
 }
 
-function copyToClipboard() {
-    const htmlCode = document.getElementById('htmlCode');
+function copyToClipboard(type = 'tailwind') {
+    const htmlCode = document.getElementById(type === 'tailwind' ? 'htmlCodeTailwind' : 'htmlCodeCSS');
     htmlCode.select();
     document.execCommand('copy');
     
-    const copyButton = document.querySelector('.copy-button');
+    const copyButton = event.target;
     const originalText = copyButton.textContent;
     copyButton.textContent = 'Copied!';
     setTimeout(() => {
@@ -295,4 +302,163 @@ function formatHTML(html) {
     }
     
     return formatted;
+}
+
+function createCSSVersion(form) {
+    // Convert Tailwind classes to standard CSS classes
+    const tailwindToCSS = {
+        'form-field': 'css-form-field',
+        'w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent': 'css-input',
+        'space-y-2': 'css-space-y-2',
+        'flex items-center': 'css-flex-items-center',
+        'mr-2': 'css-mr-2',
+        'cursor-pointer': 'css-cursor-pointer',
+        'mt-4 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium': 'css-submit-button',
+        'mt-4 p-3 rounded-lg hidden': 'css-status-hidden',
+        'mt-4 p-3 rounded-lg block bg-yellow-50 border border-yellow-200 text-yellow-800': 'css-status-warning',
+        'mt-4 p-3 rounded-lg block bg-green-50 border border-green-200 text-green-800': 'css-status-success',
+        'mt-4 p-3 rounded-lg block bg-red-50 border border-red-200 text-red-800': 'css-status-error',
+        'mt-4 px-6 py-3 bg-gray-400 text-white rounded-lg cursor-not-allowed font-medium': 'css-submit-button-disabled'
+    };
+
+    // Replace Tailwind classes with CSS classes
+    function replaceTailwindClasses(element) {
+        if (element.className) {
+            Object.keys(tailwindToCSS).forEach(tailwindClass => {
+                if (element.className.includes(tailwindClass)) {
+                    element.className = element.className.replace(tailwindClass, tailwindToCSS[tailwindClass]);
+                }
+            });
+        }
+        
+        // Recursively process child elements
+        Array.from(element.children).forEach(child => {
+            replaceTailwindClasses(child);
+        });
+    }
+
+    replaceTailwindClasses(form);
+
+    // Add CSS styles to the form
+    const style = document.createElement('style');
+    style.textContent = `
+        .css-form-field {
+            margin-bottom: 1rem;
+        }
+        .css-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .css-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .css-space-y-2 > * + * {
+            margin-top: 0.5rem;
+        }
+        .css-flex-items-center {
+            display: flex;
+            align-items: center;
+        }
+        .css-mr-2 {
+            margin-right: 0.5rem;
+        }
+        .css-cursor-pointer {
+            cursor: pointer;
+        }
+        .css-submit-button {
+            margin-top: 1rem;
+            padding: 0.75rem 1.5rem;
+            background-color: #10b981;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .css-submit-button:hover {
+            background-color: #059669;
+        }
+        .css-submit-button-disabled {
+            margin-top: 1rem;
+            padding: 0.75rem 1.5rem;
+            background-color: #9ca3af;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: not-allowed;
+        }
+        .css-status-hidden {
+            display: none;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+        }
+        .css-status-warning {
+            display: block;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            background-color: #fefce8;
+            border: 1px solid #facc15;
+            color: #a16207;
+        }
+        .css-status-success {
+            display: block;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            background-color: #f0fdf4;
+            border: 1px solid #22c55e;
+            color: #15803d;
+        }
+        .css-status-error {
+            display: block;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            background-color: #fef2f2;
+            border: 1px solid #ef4444;
+            color: #dc2626;
+        }
+    `;
+    form.insertBefore(style, form.firstChild);
+
+    return form;
+}
+
+function switchTab(activeTab) {
+    const tailwindTab = document.getElementById('tailwindTab');
+    const cssTab = document.getElementById('cssTab');
+    const tailwindContent = document.getElementById('tailwindContent');
+    const cssContent = document.getElementById('cssContent');
+
+    if (activeTab === 'tailwind') {
+        tailwindTab.classList.add('active-tab');
+        tailwindTab.classList.remove('text-gray-600', 'hover:text-gray-800');
+        tailwindTab.classList.add('text-blue-600');
+        
+        cssTab.classList.remove('active-tab', 'text-blue-600');
+        cssTab.classList.add('text-gray-600', 'hover:text-gray-800');
+        
+        tailwindContent.style.display = 'block';
+        cssContent.style.display = 'none';
+    } else {
+        cssTab.classList.add('active-tab');
+        cssTab.classList.remove('text-gray-600', 'hover:text-gray-800');
+        cssTab.classList.add('text-blue-600');
+        
+        tailwindTab.classList.remove('active-tab', 'text-blue-600');
+        tailwindTab.classList.add('text-gray-600', 'hover:text-gray-800');
+        
+        tailwindContent.style.display = 'none';
+        cssContent.style.display = 'block';
+    }
 } 
